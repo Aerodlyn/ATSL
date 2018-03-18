@@ -1,12 +1,12 @@
 # Aerodlyn Test Scripting Language
 
-Aerodlyn Test Scripting Language (ATSL) is an attempt to "create" a scripting language. I was inspired to mess with ANTLR 
-as one of my classes has assignments that work with ANTLR.
+Aerodlyn Test Scripting Language (ATSL) is an attempt to "create" a scripting language. I was inspired to mess 
+with ANTLR as one of my classes has assignments that work with ANTLR.
 
-So, this is mostly an experiment to implement an object-oriented scripting language. I was originally going to do the 
-implementation in C++ but ANTLR has a somewhat annoying issue where functions must return a type of ANTLR's design, instead
-of one of my chosing, and working with that and arithmetic operations was rather annoying. So I instead decided to use Java 
-instead.
+So, this is mostly an experiment to implement an object-oriented scripting language. I was originally going to 
+do the implementation in C++ but ANTLR has a somewhat annoying issue where functions must return a type of 
+ANTLR's design, instead of one of my choosing, and working with that and arithmetic operations was rather 
+annoying. So I instead decided to use Java instead.
 
 ## Example Script
 ```
