@@ -26,3 +26,7 @@ end script Fib
 ```
 
 The above script showcases if-statements, recursion, functions, and printing to the console.
+
+## Compiling
+
+The 'Generate_Sources' and 'Clean' scripts are for development purposes (intelli-sense). Simply remove the 'Remove unneeded files' execution from 'pom.xml'. Of course, you will need Maven. To compile, run `mvn package` and `mvn exec:java -Dexec.args="..."` where `...` is the name of the file to parse.
