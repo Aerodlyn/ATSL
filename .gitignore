@@ -1,0 +1,12 @@
+*.DS_Store
+*.classpath
+*.project
+*.prefs
+*.jar
+*.class
+*.interp
+*.tokens
+*.lst
+
+target/*
+src/main/java/**/*.g4

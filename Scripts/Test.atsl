@@ -1,0 +1,18 @@
+begin script Test
+    var t <- 5.5
+    var s <- (call typeof <- t)
+    var d <- (call dynamic <- t)
+
+    call write <- "Type of var t: ", s, "; dynamic: ", d, "; value of var t: ", t
+
+    real t2 <- t
+    var s2 <- (call typeof <- t2)
+    var d2 <- (call dynamic <- t2)
+
+    call write <- "Type of var t2: ", s2, "; dynamic: ", d2, "; value of var t2: ", t2
+
+    t <- (call int <- t)
+    t2 <- (call real <- (call int <- t2)) + 0.25
+
+    call write <- t, ", ", t2
+end script Test
