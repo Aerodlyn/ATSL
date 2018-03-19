@@ -1,18 +1,20 @@
 begin script Test
-    var t <- 5.5
-    var s <- (call typeof <- t)
-    var d <- (call dynamic <- t)
+    begin function Hello
+        as string
 
-    call write <- "Type of var t: ", s, "; dynamic: ", d, "; value of var t: ", t
+        test <- "Hello"
+    end function Hello
 
-    real t2 <- t
-    var s2 <- (call typeof <- t2)
-    var d2 <- (call dynamic <- t2)
+    begin function Fib
+        as int with int a
 
-    call write <- "Type of var t2: ", s2, "; dynamic: ", d2, "; value of var t2: ", t2
+        call Hello
+        call write <- test, ", ", a
+    end function Fib
 
-    t <- (call int <- t)
-    t2 <- (call real <- (call int <- t2)) + 0.25
+    int a <- 2
+    string test <- "Test"
 
-    call write <- t, ", ", t2
+    call Fib <- a
+    call write <- test
 end script Test

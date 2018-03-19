@@ -58,8 +58,8 @@ function_list
     ;
 
 function
-    : BEGIN FUNCTION ID (AS TYPE)?
-        (WITH TYPE? ID (',' TYPE? ID)*)?
+    : BEGIN FUNCTION name = ID (AS TYPE_CONST)?
+        (WITH TYPE_CONST? id_list)?
         statement_list END FUNCTION ID
     ;
 
@@ -138,7 +138,7 @@ index_term returns [ATSLInteger value]
     ;
 
 assignment_list
-    : ID assignment ( | ',' assignment_list)
+    : ID assignment (',' ID assignment)*
     ;
 
 assignment
@@ -147,11 +147,16 @@ assignment
     ;
 
 expression_list
-    : expression ( | ',' expression_list)
+    : expression (| ',' expression_list)
+    ;
+
+id_list
+    : ID (',' ID)*
     ;
 
 function_call
     : CALL WRITE IS expression_list #functionCallWrite
+    | CALL ID (IS expression_list)? #functionCallId
     | CALL ID IS expression_list    #functionCallId
     | CALL DYNAMIC IS ID            #functionCallDynamic
     | CALL TYPE_CONST IS expression #functionCallCast

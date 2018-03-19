@@ -88,6 +88,10 @@ public class ATSLScope {
                 case "real":
                     declaredType = ATSLValue.TYPE.REAL;
                     break;
+
+                case "string":
+                    declaredType = ATSLValue.TYPE.STRING;
+                    break;
             }
         }
 

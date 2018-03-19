@@ -2,14 +2,24 @@ package io.github.aerodlyn.atsl;
 
 import io.github.aerodlyn.atsl.ATSLBaseVisitor;
 import io.github.aerodlyn.atsl.ATSLParser;
-import io.github.aerodlyn.atsl.ATSLValue.TYPE;
+import io.github.aerodlyn.atsl.ATSLParser.Statement_listContext;
+
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
-    // private ATSLSymbolTable table = new ATSLSymbolTable();
-    private ATSLScope scope = new ATSLScope();
+    private ATSLScope scope;
+    private HashMap<String, ATSLFunction> functions;
+
+    public ATSLMainVisitor() { this(new ATSLScope(), new HashMap<>()); }
+
+    public ATSLMainVisitor(ATSLScope scope, HashMap<String, ATSLFunction> functions) {
+        this.scope = scope;
+        this.functions = functions;
+    }
 
     @Override
     public ATSLValue visitProgram(ATSLParser.ProgramContext ctx) {
@@ -18,7 +28,22 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
         if (!bId.equals(eId))
             throwError("Begin ID '" + bId + "' does not match end ID '" + eId + "'");
 
-        return visit (ctx.statement_list());
+        visit(ctx.function_list());
+        visit(ctx.statement_list());
+        
+        return null;
+    }
+
+    @Override
+    public ATSLValue visitFunction(ATSLParser.FunctionContext ctx) {
+        List<TerminalNode> parameters = ctx.id_list() != null 
+            ? ctx.id_list().ID() : new ArrayList<>();
+        Statement_listContext statements = ctx.statement_list();
+        String id = ctx.name.getText() + parameters.size();
+
+        functions.put(id, new ATSLFunction(parameters, statements));
+
+        return null;
     }
 
     /* Begin Statement */
@@ -153,12 +178,6 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
     public ATSLValue visitStatementFunctionCall(ATSLParser.StatementFunctionCallContext ctx) {
         return visit(ctx.function_call());
     }
-
-    /*@Override
-    public ATSLValue visitStatementWrite(ATSLParser.StatementWriteContext ctx) {
-        System.out.println(visit(ctx.expression()));
-        return null;
-    }*/
 
     /* End Statement */
 
@@ -310,10 +329,10 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
 
     @Override
     public ATSLValue visitAssignment_list(ATSLParser.Assignment_listContext ctx) {
-        ATSLValue value = visit(ctx.assignment());
-       
-        scope.declareVariable(ctx.ID().getText(), value);
-        return ctx.assignment_list() == null ? null : visit(ctx.assignment_list());
+        for (int i = 0; i < ctx.assignment().size(); i++)
+            scope.declareVariable(ctx.ID(i).getText(), visit(ctx.assignment(i)));
+
+        return null;
     }
 
     @Override
@@ -329,7 +348,10 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
     /* Begin Function Call */
     @Override
     public ATSLValue visitFunctionCallId(ATSLParser.FunctionCallIdContext ctx) {
-        return null;
+        ArrayList<ATSLValue> list = createParameterList(ctx.expression_list());
+        String id = ctx.ID().getText() + list.size();
+
+        return functions.get(id).invoke(list, functions, scope);
     }
 
     @Override
@@ -388,7 +410,9 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
 
     private ArrayList<ATSLValue> createParameterList(ATSLParser.Expression_listContext ctx) {
         ArrayList<ATSLValue> list = new ArrayList<>();
-        createParameterList(ctx, list);
+        
+        if (ctx != null)
+            createParameterList(ctx, list);
         
         return list;
     }
