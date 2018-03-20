@@ -23,8 +23,16 @@ public class ATSLFunction {
         for (int i = 0; i < parameters.size(); i++)
             scope.declareVariable(this.parameters.get(i).getText(), parameters.get(i));
 
-        visitor.visit(statements);
+        ATSLValue returnValue = null;
         
-        return null;
+        try {
+            visitor.visit(statements);
+        }
+
+        catch (ATSLReturn ex) {
+            returnValue = ex.getReturnValue();
+        }
+        
+        return returnValue;
     }
 }

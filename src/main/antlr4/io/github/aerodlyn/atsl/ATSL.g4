@@ -7,6 +7,7 @@ END         : 'end'             ;
 SCRIPT      : 'script'          ;
 CALL        : 'call'            ;
 FUNCTION    : 'function'        ;
+RETURN      : 'return'          ;
 IS          : 'is'      | '<-'  ;
 TO          : 'to'              ;
 NOT         : 'not'     | '!'   ;
@@ -74,7 +75,6 @@ statement
         (',' ID '[' index_term ']' (IS expression)?)*               #statementArrayDeclaration
     | ID IS expression                                              #statementAssignment
     | ID '[' index_term ']' IS expression                           #statementArrayAssignment
-    // | CALL ID (IS expression (',' expression)*)?                    #statementFunctionCall
     | BEGIN IF or_expression THEN
         statement_list (ELSE IF or_expression THEN
         statement_list)* (ELSE THEN statement_list)?
@@ -85,14 +85,14 @@ statement
         THEN statement_list END FOR                                 #statementForAssignment
     | BEGIN FOR ID TO expression
         THEN statement_list END FOR                                 #statementFor
+    | RETURN expression?                                            #statementReturn
     | function_call                                                 #statementFunctionCall
-    // | WRITE expression                                              #statementWrite
-    | READ ID                                                       #statementRead
     ;
 
 expression
     : add_expression
     | or_expression
+    | function_call
     ;
 
 add_expression
@@ -112,7 +112,6 @@ term
     | INT_CONST                                     #termInt
     | REAL_CONST                                    #termReal
     | STRING_CONST                                  #termString
-    | function_call                                 #termFunctionCall
     ;
 
 or_expression
@@ -147,7 +146,7 @@ assignment
     ;
 
 expression_list
-    : expression (| ',' expression_list)
+    : expression (',' expression)*
     ;
 
 id_list
@@ -156,11 +155,11 @@ id_list
 
 function_call
     : CALL WRITE IS expression_list #functionCallWrite
-    | CALL ID (IS expression_list)? #functionCallId
-    | CALL ID IS expression_list    #functionCallId
+    | CALL ID (IS expression_list)?    #functionCallId
     | CALL DYNAMIC IS ID            #functionCallDynamic
     | CALL TYPE_CONST IS expression #functionCallCast
     | CALL TYPEOF IS expression     #functionCallTypeof
+    | CALL READ                     #functionCallRead
     ;
 
 INT_CONST : '-'? POSITIVE_CONST ;

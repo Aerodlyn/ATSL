@@ -1,20 +1,13 @@
-begin script Test
-    begin function Hello
-        as string
-
-        test <- "Hello"
-    end function Hello
-
-    begin function Fib
-        as int with int a
-
-        call Hello
-        call write <- test, ", ", a
-    end function Fib
-
-    int a <- 2
-    string test <- "Test"
-
-    call Fib <- a
-    call write <- test
+begin script Test 
+  begin function Fib
+    as int with int x
+    
+    begin if x <= 1 then
+      return x
+    end if
+    
+    return (call Fib <- x - 1) + (call Fib <- x - 2)
+  end function Fib
+  
+  call write <- "The 25th term of the Fibonacci sequence is: ", (call Fib <- 25)
 end script Test

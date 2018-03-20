@@ -175,10 +175,16 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
     }
 
     @Override
+    public ATSLValue visitStatementReturn(ATSLParser.StatementReturnContext ctx) {
+        ATSLValue value = ctx.expression() != null ? visit(ctx.expression()) : null;
+        
+        throw new ATSLReturn(value);
+    }
+
+    @Override
     public ATSLValue visitStatementFunctionCall(ATSLParser.StatementFunctionCallContext ctx) {
         return visit(ctx.function_call());
     }
-
     /* End Statement */
 
     /* Begin Add Expression */
@@ -255,11 +261,6 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
     public ATSLValue visitTermString(ATSLParser.TermStringContext ctx) {
         String str = ctx.STRING_CONST().getText();
         return new ATSLString(str.substring(1, str.length() - 1));
-    }
-
-    @Override
-    public ATSLValue visitTermFunctionCall(ATSLParser.TermFunctionCallContext ctx) {
-        return visit(ctx.function_call());
     }
     /* End Term */
 
@@ -340,11 +341,6 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
         return ctx.expression() == null ? new ATSLNone(scope.getDeclaredType()) : visit(ctx.expression());
     }
 
-    @Override
-    public ATSLValue visitExpression_list(ATSLParser.Expression_listContext ctx) {
-        return null;
-    }
-
     /* Begin Function Call */
     @Override
     public ATSLValue visitFunctionCallId(ATSLParser.FunctionCallIdContext ctx) {
@@ -397,10 +393,11 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
     /* End Function Call */
 
     private void createParameterList(ATSLParser.Expression_listContext ctx, ArrayList<ATSLValue> list) {
-        list.add(visit(ctx.expression()));
+        for (int i = 0; i < ctx.expression().size(); i++)
+            list.add(visit(ctx.expression(i)));
 
-        if (ctx.expression_list() != null)
-            createParameterList(ctx.expression_list(), list);
+        /*if (ctx.expression_list() != null)
+            createParameterList(ctx.expression_list(), list);*/
     }
 
     private void throwError(String message) {
