@@ -25,7 +25,7 @@ begin script Fib
 end script Fib
 ```
 
-The above script showcases if-statements, recursion, functions, and printing to the console. The above script also gives an example of one of the limitations of ATSL, that is due to the way functions are called if there are multiple function calls in an arithmetic expression they must be surrounded by parentheses (as seen in `return (call f <- x - 1) + (call f <- x - 2)`). I recommend doing this anyway for readibility.
+The above script showcases if-statements, recursion, functions, and printing to the console. The above script also gives an example of one of the limitations of ATSL, that is due to the way functions are called if there are multiple function calls in an arithmetic expression they must be surrounded by parentheses (as seen in `return (call f <- x - 1) + (call f <- x - 2)`). I recommend doing this anyway for readability.
 
 ## Compiling
 
