@@ -38,6 +38,7 @@ TYPE_CONST
 
 TYPE : '<' TYPE_CONST '>' ;
 
+
 REL_OP
     : '<'
     | '<='
@@ -59,9 +60,9 @@ function_list
     ;
 
 function
-    : BEGIN FUNCTION name = ID (AS TYPE_CONST)?
+    : BEGIN FUNCTION name = ID (AS r = TYPE_CONST)?
         (WITH TYPE_CONST? id_list)?
-        statement_list END FUNCTION ID
+        statement_list END FUNCTION e = ID
     ;
 
 statement_list
@@ -71,10 +72,7 @@ statement_list
 
 statement
     : (TYPE_CONST | VAR) assignment_list                            #statementDeclaration
-    | (TYPE_CONST | VAR) ID '[' index_term ']' (IS expression)?
-        (',' ID '[' index_term ']' (IS expression)?)*               #statementArrayDeclaration
-    | ID IS expression                                              #statementAssignment
-    | ID '[' index_term ']' IS expression                           #statementArrayAssignment
+    | ID ('[' i = expression ']')? IS v = expression                #statementAssignment
     | BEGIN IF or_expression THEN
         statement_list (ELSE IF or_expression THEN
         statement_list)* (ELSE THEN statement_list)?
@@ -107,8 +105,7 @@ mult_expression
 
 term
     : '(' expression ')'                            #termExpression
-    | ID                                            #termId
-    | ID '[' index_term ']'                         #termArray
+    | ID ('[' i = expression ']')?                  #termVariable
     | INT_CONST                                     #termInt
     | REAL_CONST                                    #termReal
     | STRING_CONST                                  #termString
@@ -131,18 +128,14 @@ bool_term
     | NOT bool_term                                     #bool_termNot
     ;
 
-index_term returns [ATSLInteger value]
-    : expression
-    |
-    ;
-
 assignment_list
-    : ID assignment (',' ID assignment)*
+    : ID assignment ( | ',' assignment_list)    #assignmentListNonArray
+    | ID '[]' ( | ',' assignment_list)          #assignmentListArray
     ;
 
 assignment
     : IS expression
-    |
+    | 
     ;
 
 expression_list

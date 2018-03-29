@@ -1,13 +1,17 @@
 package io.github.aerodlyn.atsl;
 
 public class ATSLArray extends ATSLValue {
-    public ATSLArray() {
-        this(0);
+    private TYPE containedType;
+
+    public ATSLArray(TYPE type) {
+        this(type, 0);
     }
 
-    public ATSLArray(int capacity) {
+    public ATSLArray(TYPE type, int capacity) {
         value = new ATSLValue[capacity];
-        type = TYPE.ARRAY;
+        this.type = TYPE.ARRAY;
+        
+        containedType = type;
     }
 
     @Override
@@ -36,6 +40,9 @@ public class ATSLArray extends ATSLValue {
     }
 
     public void putElement(int index, ATSLValue value) {
+        if (containedType != TYPE.NONE && containedType != value.getType())
+            throw new UnsupportedOperationException("Wrong type for Array");
+        
         int size = ((ATSLValue[]) this.value).length;
 
         if (index >= size)
@@ -51,7 +58,7 @@ public class ATSLArray extends ATSLValue {
 
     private void grow(int capacity) {
         ATSLValue[] array = (ATSLValue[]) value;
-        ATSLValue[] tmp = new ATSLValue[capacity];
+        ATSLValue[] tmp = (ATSLValue[]) new ATSLValue[capacity];
 
         for (int i = 0; i < array.length; i++)
             tmp[i] = array[i];
@@ -61,5 +68,9 @@ public class ATSLArray extends ATSLValue {
 
     public ATSLValue getElement(int index) {
         return ((ATSLValue[]) value)[index];
+    }
+
+    public TYPE getContainedType() {
+        return containedType;
     }
 }

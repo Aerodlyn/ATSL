@@ -3,6 +3,7 @@ package io.github.aerodlyn.atsl;
 import io.github.aerodlyn.atsl.ATSLBaseVisitor;
 import io.github.aerodlyn.atsl.ATSLParser;
 import io.github.aerodlyn.atsl.ATSLParser.Statement_listContext;
+import io.github.aerodlyn.atsl.ATSLValue.TYPE;
 
 import org.antlr.v4.runtime.tree.TerminalNode;
 
@@ -26,7 +27,7 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
         String bId = ctx.ID (0).getText(), eId = ctx.ID (1).getText();
 
         if (!bId.equals(eId))
-            throwError("Begin ID '" + bId + "' does not match end ID '" + eId + "'");
+            throw ATSLException.idsDoNotMatch(bId, eId);
 
         visit(ctx.function_list());
         visit(ctx.statement_list());
@@ -39,9 +40,14 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
         List<TerminalNode> parameters = ctx.id_list() != null 
             ? ctx.id_list().ID() : new ArrayList<>();
         Statement_listContext statements = ctx.statement_list();
-        String id = ctx.name.getText() + parameters.size();
+        String bId = ctx.name.getText(), id = bId + parameters.size(), eId = ctx.e.getText(), 
+            t = ctx.r == null ? "none" : ctx.r.getText();
 
-        functions.put(id, new ATSLFunction(parameters, statements));
+        if (eId.equals(bId))
+            functions.put(id, new ATSLFunction(TYPE.convertStringToType(t), parameters, statements));
+
+        else
+            throw ATSLException.idsDoNotMatch(bId, eId);
 
         return null;
     }
@@ -49,50 +55,32 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
     /* Begin Statement */
     @Override
     public ATSLValue visitStatementDeclaration(ATSLParser.StatementDeclarationContext ctx) {
-        scope.setDeclaredType(ctx.TYPE_CONST() == null ? null : ctx.TYPE_CONST().getText());
+        String t = ctx.TYPE_CONST() == null ? "none" : ctx.TYPE_CONST().getText();
+        
+        scope.setDeclaredType(TYPE.convertStringToType(t));
         visit(ctx.assignment_list());
 
         return null;
     }
 
     @Override
-    public ATSLValue visitStatementArrayDeclaration(ATSLParser.StatementArrayDeclarationContext ctx) {
-        String[] decls = ctx.getText().split(",");
+    public ATSLValue visitStatementAssignment(ATSLParser.StatementAssignmentContext ctx) {
+        ATSLParser.ExpressionContext eIndex = ctx.i;
+        ATSLValue value = visit(ctx.v);
+        String id = ctx.ID().getText();
 
-        if (ctx.TYPE_CONST() != null) {
-            if (ctx.TYPE_CONST().getText().equals("array"))
-                scope.setDeclaredType(null);
+        if (eIndex == null)
+            scope.assignVariable(id, value);
+
+        else {
+            ATSLValue index = visit(eIndex);
+
+            if (index instanceof ATSLInteger)
+                scope.assignVariableInArray(((ATSLInteger) index).getValue(), id, value);
 
             else
-                throw new UnsupportedOperationException("Arrays must be of type 'array'.");
+                throw ATSLException.variableIsNotArray(id);
         }
-
-        for (int i = 0, j = 0; i < decls.length; i++) {
-            String id = ctx.ID(i).getText();
-            ATSLValue assign = decls[i].contains("<-") ? visit(ctx.expression(j++)) : null;
-            int n = ((ATSLInteger) visit(ctx.index_term(i))).getValue();
-
-            n = n == -1 ? 0 : n;
-
-            /*table.createVariableArray(id, n);
-
-            if (assign != null)
-                table.addElementToArrayVariable(id, assign, n - 1);*/
-        }
-
-        return null;
-    }
-
-    @Override
-    public ATSLValue visitStatementAssignment(ATSLParser.StatementAssignmentContext ctx) {
-        scope.assignVariable(ctx.ID().getText(), visit(ctx.expression()));
-        return null;
-    }
-
-    @Override
-    public ATSLValue visitStatementArrayAssignment(ATSLParser.StatementArrayAssignmentContext ctx) {
-        int n = ((ATSLInteger) visit(ctx.index_term())).getValue();
-        // table.addElementToArrayVariable(ctx.ID().getText(), visit(ctx.expression()), n);
 
         return null;
     }
@@ -176,7 +164,7 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
 
     @Override
     public ATSLValue visitStatementReturn(ATSLParser.StatementReturnContext ctx) {
-        ATSLValue value = ctx.expression() != null ? visit(ctx.expression()) : null;
+        ATSLValue value = ctx.expression() != null ? visit(ctx.expression()) : new ATSLNone(null);
         
         throw new ATSLReturn(value);
     }
@@ -238,13 +226,21 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
     }
 
     @Override
-    public ATSLValue visitTermId(ATSLParser.TermIdContext ctx) {
-        return scope.getVariable(ctx.ID().getText());
-    }
+    public ATSLValue visitTermVariable(ATSLParser.TermVariableContext ctx) {
+        ATSLParser.ExpressionContext eIndex = ctx.i;
+        String id = ctx.ID().getText();
 
-    @Override
-    public ATSLValue visitTermArray(ATSLParser.TermArrayContext ctx) {
-        return null; // table.getVariableFromArray(ctx.ID().getText(), ((ATSLInteger) visit(ctx.index_term())).getValue());
+        if (eIndex == null)
+            return scope.getVariable(id);
+
+        else {
+            ATSLValue index = visit(eIndex);
+
+            if (index instanceof ATSLInteger)
+                return scope.getValueInArray(((ATSLInteger) index).getValue(), id);
+
+            throw ATSLException.variableIsNotArray(id);
+        }
     }
 
     @Override
@@ -315,7 +311,7 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
     }
     /* End Bool Term */
 
-    @Override
+    /*@Override
     public ATSLInteger visitIndex_term(ATSLParser.Index_termContext ctx) {
         ATSLValue value = ctx.expression() == null ? null : visit(ctx.expression());
 
@@ -326,14 +322,20 @@ public class ATSLMainVisitor extends ATSLBaseVisitor<ATSLValue> {
             return (ATSLInteger) value;
 
         throw new UnsupportedOperationException();
+    }*/
+
+    @Override
+    public ATSLValue visitAssignmentListNonArray(ATSLParser.AssignmentListNonArrayContext ctx) {
+        scope.declareVariable(ctx.ID().getText(), visit(ctx.assignment()));
+        
+        return ctx.assignment_list() != null ? visit(ctx.assignment_list()) : null;
     }
 
     @Override
-    public ATSLValue visitAssignment_list(ATSLParser.Assignment_listContext ctx) {
-        for (int i = 0; i < ctx.assignment().size(); i++)
-            scope.declareVariable(ctx.ID(i).getText(), visit(ctx.assignment(i)));
+    public ATSLValue visitAssignmentListArray(ATSLParser.AssignmentListArrayContext ctx) {
+        scope.declareVariable(ctx.ID().getText(), new ATSLArray(scope.getDeclaredType()));
 
-        return null;
+        return ctx.assignment_list() != null ? visit(ctx.assignment_list()) : null;
     }
 
     @Override

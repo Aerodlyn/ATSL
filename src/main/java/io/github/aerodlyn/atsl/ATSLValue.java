@@ -32,7 +32,53 @@ public abstract class ATSLValue {
         }
     }
 
-    public enum TYPE { ARRAY, BOOLEAN, INTEGER, NONE, OBJECT, REAL, STRING }
+    public enum TYPE { 
+        ARRAY(), BOOLEAN(), INTEGER(), NONE(), OBJECT(), REAL(), STRING();
+
+        public boolean isTypeCompatibleWith(TYPE type) { 
+            switch (this) {
+                case INTEGER:
+                    return type == INTEGER || type == REAL;
+
+                case NONE:
+                    return type == NONE;
+
+                case REAL:
+                    return type == INTEGER || type == REAL;
+
+                default:
+                    return false;
+            }
+        }
+
+        public static TYPE convertStringToType(String value) {
+            switch (value) {
+                case "array":
+                    return ARRAY;
+
+                case "bool":
+                    return BOOLEAN;
+
+                case "int":
+                    return INTEGER;
+
+                case "none":
+                    return NONE;
+
+                case "object":
+                    return OBJECT;
+
+                case "real":
+                    return REAL;
+
+                case "string":
+                    return STRING;
+
+                default:
+                    throw new UnsupportedOperationException();
+            }
+        }
+    }
 
     protected boolean dynamic = true;
 
@@ -95,7 +141,7 @@ public abstract class ATSLValue {
 
         switch (type) {
             case ARRAY:
-                value = new ATSLArray();
+                value = new ATSLArray(null);
                 break;
 
             case BOOLEAN:
