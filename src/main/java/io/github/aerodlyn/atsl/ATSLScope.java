@@ -46,58 +46,55 @@ public class ATSLScope {
             parent.assignVariable(id, value);
 
         else
-            throw ATSLException.variableAlreadyExists(id);
+            throw ATSLException.variableDoesNotExist(id);
+    }
+
+    public void assignVariableInArray(int index, String id, ATSLValue value) {
+        ATSLValue var = variables.get(id);
+
+        if (var != null) {
+            if (var instanceof ATSLArray) {
+                ATSLArray arr = (ATSLArray) var;
+                TYPE type = arr.getContainedType();
+
+                if (type != TYPE.NONE && type != value.getType())
+                    throw new UnsupportedOperationException();
+
+                arr.putElement(index, value);
+            }
+
+            /*if (!var.isDynamic() && var.getType() != value.getType())
+                throw ATSLException.variableIsNotDynamic(id);
+
+            if (var instanceof ATSLArray) {
+                ATSLArray arr = (ATSLArray) var;
+
+                arr.putElement(index, value);
+            }*/
+        }
+
+        else if (parent != null)
+            parent.assignVariableInArray(index, id, value);
+
+        else
+            throw ATSLException.variableDoesNotExist(id);
     }
 
     public void declareVariable(String id, ATSLValue value) {
-        ATSLValue var = value.copy();
-        var.dynamic = declaredType == null;
+        ATSLValue var = value; // .copy();
+        var.dynamic = declaredType == TYPE.NONE;
 
-        if (declaredType != null && value.getType() != declaredType)
+        if (!value.isDynamic() && value.getType() != declaredType && value.getType() != TYPE.ARRAY)
             throw ATSLException.variableIsNotDynamic(id);
 
         if (!variables.containsKey(id))
             variables.put(id, var);
 
         else
-            throw new UnsupportedOperationException();
+            throw ATSLException.variableAlreadyExists(id);
     }
 
-    public void setDeclaredType(String type) { 
-        if (type != null) {
-            switch (type) {
-                case "array":
-                    declaredType = ATSLValue.TYPE.ARRAY;
-                    break;
-
-                case "bool":
-                    declaredType = ATSLValue.TYPE.BOOLEAN;
-                    break;
-
-                case "int":
-                    declaredType = ATSLValue.TYPE.INTEGER;
-                    break;
-
-                case "none":
-                    throw new UnsupportedOperationException("Cannot declare a variable to have type 'none'.");
-
-                case "object":
-                    declaredType = ATSLValue.TYPE.OBJECT;
-                    break;
-
-                case "real":
-                    declaredType = ATSLValue.TYPE.REAL;
-                    break;
-
-                case "string":
-                    declaredType = ATSLValue.TYPE.STRING;
-                    break;
-            }
-        }
-
-        else
-            declaredType = null;
-    }
+    public void setDeclaredType(TYPE type) { declaredType = type; }
 
     public ATSLScope getCopy() { 
         ATSLScope scope = new ATSLScope(parent);
@@ -107,6 +104,22 @@ public class ATSLScope {
      }
 
     public ATSLScope getParent() { return parent; }
+
+    public ATSLValue getValueInArray(int index, String id) {
+        ATSLValue var = variables.get(id);
+
+        if (var != null) {
+            if (var instanceof ATSLArray)
+                return ((ATSLArray) var).getElement(index);
+
+            throw new UnsupportedOperationException();
+        }
+
+        else if (!isGlobalScope())
+            return parent.getValueInArray(index, id);
+        
+        throw ATSLException.variableDoesNotExist(id);
+    }
 
     public ATSLValue getVariable(String id) {
         ATSLValue value = variables.get(id);
